@@ -85,8 +85,9 @@ func (b *B) handleCCtl(conn net.Conn) {
 		err := parser.Encode(p)
 		if err != nil {
 			log.Printf("encode cli err: %s\n", err)
-			return
 		}
+		// a没连上, 先断开c
+		return
 	}
 	aCtlEncoder := json.NewEncoder(aCtlConn)
 	aCtlDecoder := json.NewDecoder(aCtlConn)
