@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"sync/atomic"
 )
@@ -115,6 +116,8 @@ func (b *B) handleCCtl(conn net.Conn) {
 			rsp, err = testD(aCtlEncoder, aCtlDecoder, req)
 		case "tunnelBAD":
 			rsp, err = b.tunnelBAD(aCtlEncoder, aCtlDecoder, req)
+		case "listForward":
+			rsp, err = b.listForward()
 		default:
 			rsp = &Packet{Data: map[string]string{"msg": fmt.Sprintf("%s not implement", req.Cmd)}}
 		}
@@ -237,4 +240,17 @@ func (b *B) Stop() {
 	close(b.stop)
 	b.clearCBAListener()
 	b.wg.Wait()
+}
+
+func (b *B) listForward() (*Packet, error) {
+	rsp := &Packet{Data: make(map[string]string)}
+	b.caLisMap.Range(func(key, value any) bool {
+		var (
+			dAddr = key.(string)
+			caLis = value.(*CAListener)
+		)
+		rsp.Data[fmt.Sprintf("B提供到[%s]的转发端口", dAddr)] = strconv.Itoa(caLis.CRandPort())
+		return true
+	})
+	return rsp, nil
 }

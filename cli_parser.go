@@ -52,7 +52,9 @@ func (c *CliParser) Encode(p *Packet) error {
 	}
 	// cmd=abc&k=v
 	args := url.Values{}
-	args.Set("cmd", p.Cmd)
+	if p.Cmd != "" {
+		args.Set("cmd", p.Cmd)
+	}
 	for k, v := range p.Data {
 		args.Set(k, v)
 	}
