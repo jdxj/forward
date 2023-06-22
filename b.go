@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 func NewB(bIP, cCtlPort, aCtlPort string) *B {
@@ -216,12 +217,49 @@ func (b *B) clearCBAListener() {
 	})
 }
 
+func (b *B) clearInactiveCAListener() {
+	var (
+		interval = time.Second * 10
+		timer    = time.NewTimer(interval)
+	)
+	defer timer.Stop()
+
+	for {
+		timer.Reset(interval)
+		select {
+		case <-timer.C:
+		case <-b.stop:
+			return
+		}
+
+		b.caLisMap.Range(func(key, value any) bool {
+			if caLis := value.(*CAListener); !caLis.Active() {
+				b.caLisMap.Delete(key)
+				caLis.Stop()
+
+				log.Printf("clear inactive caListener, cRandPort: %d, aRandPort: %d\n",
+					caLis.CRandPort(), caLis.ARandPort())
+			}
+			return true
+		})
+	}
+}
+
 func (b *B) Start() error {
-	err := b.listenACtl()
-	if err != nil {
+	if err := b.listenACtl(); err != nil {
 		return err
 	}
-	return b.listenCCtl()
+	if err := b.listenCCtl(); err != nil {
+		return err
+	}
+
+	b.wg.Add(1)
+	go func() {
+		b.wg.Done()
+
+		b.clearInactiveCAListener()
+	}()
+	return nil
 }
 
 func (b *B) Stop() {

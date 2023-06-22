@@ -104,13 +104,13 @@ func (t *CAListener) createCBATunnel() {
 	for {
 		if baConn, ok = <-t.baConnCh; !ok {
 			log.Printf("closed baConnCh")
-			return
+			break
 		}
 		log.Printf("发现baConn, 等待cbConn\nbaConn: %s\n", formatConnInfo(baConn))
 
 		if cbConn, ok = <-t.cbConnCh; !ok {
 			log.Printf("closed cbConnCh")
-			return
+			break
 		}
 		log.Printf("发现cbConn\ncbConn: %s\n", formatConnInfo(cbConn))
 
@@ -128,6 +128,14 @@ func (t *CAListener) createCBATunnel() {
 			formatConnInfo(cbConn),
 			formatConnInfo(baConn),
 		)
+	}
+
+	// 关闭chan中的剩余连接
+	for ; baConn != nil; baConn = <-t.baConnCh {
+		_ = baConn.Close()
+	}
+	for ; cbConn != nil; cbConn = <-t.cbConnCh {
+		_ = cbConn.Close()
 	}
 }
 
@@ -205,4 +213,14 @@ func (t *CAListener) Stop() {
 
 	t.clearCBATunnel()
 	t.wg.Wait()
+}
+
+func (t *CAListener) Active() bool {
+	var active bool
+	t.cbaTunnelMap.Range(func(key, value any) bool {
+		active = true
+		// 发现有活跃的隧道直接返回
+		return false
+	})
+	return active
 }
