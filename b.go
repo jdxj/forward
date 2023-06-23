@@ -81,7 +81,7 @@ func (b *B) handleCCtl(conn net.Conn) {
 	if !ok {
 		p := &Packet{
 			Data: map[string]string{
-				"msg": fmt.Sprintf("a没连上\n"),
+				"msg": "a没连上\n",
 			},
 		}
 		err := parser.Encode(p)
@@ -123,6 +123,14 @@ func (b *B) handleCCtl(conn net.Conn) {
 			rsp = &Packet{Data: map[string]string{"msg": fmt.Sprintf("%s not implement", req.Cmd)}}
 		}
 
+		if err != nil {
+			rsp = &Packet{
+				Cmd: req.Cmd,
+				Data: map[string]string{
+					"error": err.Error(),
+				},
+			}
+		}
 		err = parser.Encode(rsp)
 		if err != nil {
 			// todo: 断言err

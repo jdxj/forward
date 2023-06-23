@@ -11,9 +11,7 @@ func CaptureSignal() {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 
-	select {
-	case <-ch:
-	}
+	<-ch
 
 	log.Println("receive stop")
 }

@@ -175,7 +175,7 @@ func (c *A) addBADTunnel(req *Packet) *Packet {
 		formatConnInfo(adConn),
 	)
 
-	req.Data["msg"] = fmt.Sprintf("add bad tunnel success")
+	req.Data["msg"] = "add bad tunnel success"
 	req.Data["code"] = "1"
 	return req
 }
